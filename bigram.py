@@ -9,7 +9,8 @@ block_size = 8 # What is the maximum context length for predictions?
 max_iters = 3000
 eval_interval = 300
 learning_rate = 1e-2
-device = 'mps' if torch.backend.mps.is_available() else 'cpu'
+#device = 'mps' if torch.backends.mps.is_available() else 'cpu'
+device = 'cpu'
 eval_iters = 200
 
 torch.manual_seed(1337)
@@ -31,7 +32,7 @@ decode = lambda l: ''.join([itos[i] for i in l])
 data = torch.tensor(encode(text), dtype=torch.long)
 n = int(0.9 * len(data))
 train_data = data[:n]
-valid_data = data[n:]
+val_data = data[n:]
 
 # Data loading
 def get_batch(split):
@@ -51,14 +52,14 @@ def estimate_loss():
     # Go into evaluation phase. Currently does not matter
     model.eval()
     for split in ['train', 'val']:
-        losses = torch.zero(eval_iters)
+        losses = torch.zeros(eval_iters)
         for k in range(eval_iters):
             X, Y = get_batch(split)
             logits, loss = model(X, Y)
             losses[k] = loss.item()
         out[split] = losses.mean()
     # Go into training phase
-    mode.train()
+    model.train()
     return out
 
 
@@ -134,4 +135,4 @@ for iter in range(max_iters):
     optimizer.step()
 
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
-print(decode(m.generate(context, max_new_tokens=500)[0].to_list()))
+print(decode(m.generate(context, max_new_tokens=500)[0].tolist()))
